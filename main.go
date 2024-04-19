@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/404bro/knative-agent/analytics"
 	"github.com/404bro/knative-agent/clients"
 	"github.com/404bro/knative-agent/config"
 	"github.com/404bro/knative-agent/metrics"
@@ -28,6 +29,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{}))
 	mux.Handle("/map", http.HandlerFunc(servicemap.Handler))
+	mux.Handle("/analytics/traces", http.HandlerFunc(analytics.TracesHandler))
+	mux.Handle("/analytics/graph", http.HandlerFunc(analytics.GraphHandler))
 	server := http.Server{Addr: ":" + config.Port, Handler: mux}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {
@@ -42,13 +45,20 @@ func main() {
 			from = to
 			to = time.Now().Add(-time.Second)
 			spans, err := trace.GetMarkedSpans(from, to, config.JaegerURL)
-			if err == nil {
-				fmt.Printf("[%d %d] Got %d spans\n", from.UnixMilli(), to.UnixMilli(), len(spans))
-				go metrics.UpdateColdstartMetrics(spans, m.ServiceColdstartCount, from, to)
-				go servicemap.UpdateServiceMap(spans, from, to)
-			} else {
+			if err != nil {
 				fmt.Printf("Failed to get marked spans: %v\n", err)
+				return
 			}
+			errMTraces, err := trace.GetMarkedErrMTraces(from, to, config.JaegerURL)
+			if err != nil {
+				fmt.Printf("Failed to get marked error traces: %v\n", err)
+				return
+			}
+			fmt.Printf("[%d %d] Got %d spans\n", from.UnixMicro(), to.UnixMicro(), len(spans))
+			go metrics.UpdateColdstartMetrics(spans, m.ServiceColdstartCount, from, to)
+			go servicemap.UpdateServiceMap(spans, from, to)
+			go analytics.UpdateAnalytics(errMTraces, from, to)
+
 		}()
 		time.Sleep(time.Duration(config.Interval) * time.Second)
 	}

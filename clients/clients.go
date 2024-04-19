@@ -42,6 +42,6 @@ func ConnectClients() error {
 	if err != nil {
 		return err
 	}
-	DBClient = db.NewMongoDB(mongoClient, "knative", "servicemap")
+	DBClient = db.NewMongoDB(mongoClient, "knative")
 	return nil
 }
