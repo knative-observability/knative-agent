@@ -28,6 +28,37 @@ func UpdateServiceMap(spans map[string]*trace.Span, from time.Time, to time.Time
 	return err
 }
 
+func GetServiceMap(spans map[string]*trace.Span, from time.Time, to time.Time) (model.ServiceMap, error) {
+	edges := getEdges(spans)
+	nodes := genNodes(edges)
+	serviceMap := model.ServiceMap{Nodes: nodes, Edges: edges}
+	err := getMetrics(&serviceMap, from, to)
+	if err != nil {
+		fmt.Printf("failed to get metrics: %v\n", err)
+		return model.ServiceMap{}, err
+	}
+	return serviceMap, nil
+}
+
+// Generate nodes from edges
+func genNodes(edges []model.ServiceMapEdge) []model.ServiceMapNode {
+	nodes := make(map[string]model.ServiceMapNode)
+	for _, edge := range edges {
+		if _, ok := nodes[edge.SrcName]; !ok {
+			nodes[edge.SrcName] = model.ServiceMapNode{Name: edge.SrcName, Namespace: edge.SrcNamespace}
+		}
+		if _, ok := nodes[edge.DstName]; !ok {
+			nodes[edge.DstName] = model.ServiceMapNode{Name: edge.DstName, Namespace: edge.DstNamespace}
+		}
+	}
+	result := []model.ServiceMapNode{}
+	for _, node := range nodes {
+		result = append(result, node)
+	}
+	return result
+}
+
+// Get All nodes by quering Knative Serving
 func getNodes() ([]model.BasicServiceMapNode, error) {
 	serviceList, err := clients.KnsClient.ListServices(context.Background())
 	if err != nil {
@@ -153,7 +184,7 @@ func getMetrics(serviceMap *model.ServiceMap, from time.Time, to time.Time) erro
 		}
 
 		if success+fail == 0 {
-			node.Success = 0
+			node.Success = 1
 		} else {
 			node.Success = success / (success + fail)
 		}

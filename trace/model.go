@@ -1,5 +1,7 @@
 package trace
 
+import "time"
+
 type Traces struct {
 	Data []Trace `json:"data"`
 }
@@ -7,6 +9,12 @@ type Traces struct {
 type Trace struct {
 	TraceID string `json:"traceID"`
 	Spans   []Span `json:"spans"`
+}
+
+type MTrace struct {
+	TraceID string
+	Time    time.Time
+	Spans   map[string]*Span
 }
 
 type Span struct {
