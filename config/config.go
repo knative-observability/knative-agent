@@ -14,8 +14,8 @@ var MongoDBURL string
 func LoadConfig() {
 	Port = "9091"
 	Interval = 1
-	JaegerURL = "http://simplest-query.default.svc.cluster.local:16686"
-	PrometheusURL = "http://prometheus-kube-prometheus-prometheus.default.svc.cluster.local:9090"
+	JaegerURL = "http://jaeger-query:16686"
+	PrometheusURL = "http://prometheus-kube-prometheus-prometheus:9090"
 	MongoDBURL = "mongodb://mongodb:27017"
 
 	if os.Getenv("PORT") != "" {
