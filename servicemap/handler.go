@@ -29,10 +29,25 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to query service map", http.StatusInternalServerError)
 		return
 	}
-	getMetrics(&graph, time.UnixMicro(from), time.UnixMicro(to))
+	GetMetrics(&graph, time.UnixMicro(from), time.UnixMicro(to))
 	result, err := json.Marshal(graph)
 	if err != nil {
 		http.Error(w, "Failed to marshal service map", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(result)
+}
+
+func ServiceHandler(w http.ResponseWriter, r *http.Request) {
+	nodes, err := getNodes()
+	if err != nil {
+		http.Error(w, "Failed to get nodes", http.StatusInternalServerError)
+		return
+	}
+	result, err := json.Marshal(nodes)
+	if err != nil {
+		http.Error(w, "Failed to marshal nodes", http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")

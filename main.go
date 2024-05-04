@@ -31,6 +31,8 @@ func main() {
 	mux.Handle("/map", http.HandlerFunc(servicemap.Handler))
 	mux.Handle("/analytics/traces", http.HandlerFunc(analytics.TracesHandler))
 	mux.Handle("/analytics/graph", http.HandlerFunc(analytics.GraphHandler))
+	mux.Handle("/analytics/services", http.HandlerFunc(analytics.ServiceHandler))
+	mux.Handle("/services", http.HandlerFunc(servicemap.ServiceHandler))
 	server := http.Server{Addr: ":" + config.Port, Handler: mux}
 	go func() {
 		if err := server.ListenAndServe(); err != nil {

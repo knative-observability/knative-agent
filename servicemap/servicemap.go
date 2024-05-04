@@ -32,7 +32,7 @@ func GetServiceMap(spans map[string]*trace.Span, from time.Time, to time.Time) (
 	edges := getEdges(spans)
 	nodes := genNodes(edges)
 	serviceMap := model.ServiceMap{Nodes: nodes, Edges: edges}
-	err := getMetrics(&serviceMap, from, to)
+	err := GetMetrics(&serviceMap, from, to)
 	if err != nil {
 		fmt.Printf("failed to get metrics: %v\n", err)
 		return model.ServiceMap{}, err
@@ -134,7 +134,7 @@ func getEdges(spans map[string]*trace.Span) []model.ServiceMapEdge {
 	return result
 }
 
-func getMetrics(serviceMap *model.ServiceMap, from time.Time, to time.Time) error {
+func GetMetrics(serviceMap *model.ServiceMap, from time.Time, to time.Time) error {
 	for i := range serviceMap.Nodes {
 		node := &serviceMap.Nodes[i]
 

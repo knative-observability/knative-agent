@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/404bro/knative-agent/clients"
+	"github.com/404bro/knative-agent/model"
+	"github.com/404bro/knative-agent/servicemap"
 )
 
 type params struct {
@@ -72,7 +74,36 @@ func GraphHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to query analytic graph", http.StatusInternalServerError)
 		return
 	}
+	servicemap.GetMetrics(&graph, time.UnixMicro(params.from), time.UnixMicro(params.to))
 	result, err := json.Marshal(graph)
+	if err != nil {
+		http.Error(w, "Failed to marshal analytic graph", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(result)
+}
+
+func ServiceHandler(w http.ResponseWriter, r *http.Request) {
+	params, err := getParams(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	graph, err := clients.DBClient.QueryAnalyticGraph(params.name, params.namespace, time.UnixMicro(params.from), time.UnixMicro(params.to))
+	if err != nil {
+		fmt.Printf("Failed to query analytic graph: %v", err)
+		http.Error(w, "Failed to query analytic graph", http.StatusInternalServerError)
+		return
+	}
+	nns := []model.BasicServiceMapNode{}
+	for _, node := range graph.Nodes {
+		nns = append(nns, model.BasicServiceMapNode{
+			Name:      node.Name,
+			Namespace: node.Namespace,
+		})
+	}
+	result, err := json.Marshal(nns)
 	if err != nil {
 		http.Error(w, "Failed to marshal analytic graph", http.StatusInternalServerError)
 		return
